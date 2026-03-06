@@ -1,0 +1,37 @@
+name: Refresh dashboard data
+
+on:
+  schedule:
+    - cron: '30 20 * * 1-5' # 這是 UTC 時間，大約對應美東下午 4:30 (週一至週五)
+  workflow_dispatch: # 讓你可以手動按按鈕執行
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run build script
+        run: |
+          python build_data.py --out-dir data
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          git commit -m "Auto-refresh data [skip ci]" || echo "No changes to commit"
+          git push
